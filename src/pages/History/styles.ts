@@ -1,4 +1,4 @@
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
 
 export const HistoryContainer = styled.main`
   flex: 1;
@@ -58,5 +58,33 @@ export const HistoryList = styled.div`
         padding-right: 1.5rem;
       }
     }
+  }
+`
+
+const STATUS_COLORS = {
+  yellow: 'yellow-500',
+  green: 'green-500',
+  red: 'red-500',
+} as const
+
+interface StatusProps {
+  statusColor: keyof typeof STATUS_COLORS
+}
+
+export const Status = styled.span<StatusProps>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+
+    ${({ theme, statusColor }) => css`
+      background-color: ${theme.colors[STATUS_COLORS[statusColor]]};
+    `}
   }
 `
