@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { HandPalm, Play } from 'phosphor-react'
+import { differenceInSeconds } from 'date-fns'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as zod from 'zod'
-import { differenceInSeconds } from 'date-fns'
 
 import {
   CountdownContainer,
@@ -32,12 +32,24 @@ interface Cycle {
   minutesAmount: number
   startDate: Date
   interruptDate?: Date
+  finishedDate?: Date
 }
 
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([])
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
   const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
+
+  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
+
+  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
+  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
+
+  const minutesAmount = Math.floor(currentSeconds / 60)
+  const secondsAmount = currentSeconds % 60
+
+  const minutes = String(minutesAmount).padStart(2, '0')
+  const seconds = String(secondsAmount).padStart(2, '0')
 
   const { register, watch, handleSubmit, reset } = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleFormValidationSchema),
@@ -47,27 +59,9 @@ export function Home() {
     },
   })
 
-  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
-
-  useEffect(() => {
-    let timerInterval: number
-
-    if (activeCycle) {
-      timerInterval = setInterval(() => {
-        setAmountSecondsPassed(
-          differenceInSeconds(new Date(), activeCycle.startDate),
-        )
-      }, 1000)
-    }
-
-    return () => {
-      clearInterval(timerInterval)
-    }
-  }, [activeCycle])
-
   function handleCreateNewCycle(data: NewCycleFormData) {
     const newCycle: Cycle = {
-      id: String(new Date().getDate()),
+      id: String(new Date().getTime()),
       task: data.task,
       minutesAmount: data.minutesAmount,
       startDate: new Date(),
@@ -79,8 +73,8 @@ export function Home() {
   }
 
   function handleInterruptCycle() {
-    setCycles(
-      cycles.map((cycle) => {
+    setCycles((state) =>
+      state.map((cycle) => {
         if (cycle.id === activeCycleId) {
           return { ...cycle, interruptDate: new Date() }
         } else {
@@ -92,14 +86,39 @@ export function Home() {
     setActiveCycleId(null)
   }
 
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
-  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
+  useEffect(() => {
+    let timerInterval: number
 
-  const minutesAmount = Math.floor(currentSeconds / 60)
-  const secondsAmount = currentSeconds % 60
+    if (activeCycle) {
+      timerInterval = setInterval(() => {
+        const diffInSeconds = differenceInSeconds(
+          new Date(),
+          activeCycle.startDate,
+        )
 
-  const minutes = String(minutesAmount).padStart(2, '0')
-  const seconds = String(secondsAmount).padStart(2, '0')
+        if (diffInSeconds >= totalSeconds) {
+          setCycles((state) =>
+            state.map((cycle) => {
+              if (cycle.id === activeCycleId) {
+                return { ...cycle, finishedDate: new Date() }
+              } else {
+                return cycle
+              }
+            }),
+          )
+          document.title = 'Ignite Timer - Ciclo concluído'
+          setActiveCycleId(null)
+          clearInterval(timerInterval)
+        } else {
+          setAmountSecondsPassed(diffInSeconds)
+        }
+      }, 1000)
+    }
+
+    return () => {
+      clearInterval(timerInterval)
+    }
+  }, [activeCycle, activeCycleId, totalSeconds])
 
   useEffect(() => {
     if (activeCycle) {
