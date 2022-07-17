@@ -1,6 +1,9 @@
+import { useCycles } from '../../hooks/useCycles'
 import { HistoryContainer, HistoryList, Status } from './styles'
 
 export function History() {
+  const { cycles } = useCycles()
+
   return (
     <HistoryContainer>
       <h1>Meu histórico</h1>
@@ -15,30 +18,22 @@ export function History() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Desenvolver site</td>
-              <td>28 minutos</td>
-              <td>Há 2 meses</td>
-              <td>
-                <Status statusColor="green">Concluído</Status>
-              </td>
-            </tr>
-            <tr>
-              <td>Desenvolver site</td>
-              <td>28 minutos</td>
-              <td>Há 2 meses</td>
-              <td>
-                <Status statusColor="red">Interrompido</Status>
-              </td>
-            </tr>
-            <tr>
-              <td>Desenvolver site</td>
-              <td>28 minutos</td>
-              <td>Há 2 meses</td>
-              <td>
-                <Status statusColor="yellow">Em andamento</Status>
-              </td>
-            </tr>
+            {cycles.map((cycle) => (
+              <tr key={cycle.id}>
+                <td>{cycle.task}</td>
+                <td>{cycle.minutesAmount} minutos</td>
+                <td>{cycle.startDate.toLocaleDateString()}</td>
+                <td>
+                  {cycle.finishedDate ? (
+                    <Status statusColor="green">Concluído</Status>
+                  ) : cycle.interruptDate ? (
+                    <Status statusColor="red">Interrompido</Status>
+                  ) : (
+                    <Status statusColor="yellow">Em andamento</Status>
+                  )}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </HistoryList>
